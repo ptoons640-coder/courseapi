@@ -1,41 +1,40 @@
 package com.example.courseapi.service;
 
-import com.example.courseapi.model.Course;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import com.example.courseapi.model.Course;
+import com.example.courseapi.repository.CourseRepository;
 
 @Service
 public class CourseServiceImpl implements CourseService {
 
-    private final List<Course> courses = new ArrayList<>();
-    private final AtomicLong counter = new AtomicLong(0);
+    private final CourseRepository courseRepository;
+
+    public CourseServiceImpl(CourseRepository courseRepository) {
+        this.courseRepository = courseRepository;
+    }
 
     @Override
     public Course addCourse(Course course) {
-        course.setId(counter.incrementAndGet());
-        courses.add(course);
-        return course;
+        return courseRepository.save(course);
     }
 
     @Override
     public List<Course> getAllCourses() {
-        return new ArrayList<>(courses);
+        return courseRepository.findAll();
     }
 
     @Override
     public Course getCourseById(Long id) {
-        return courses.stream()
-                .filter(course -> course.getId().equals(id))
-                .findFirst()
-                .orElse(null);
+        return courseRepository.findById(id).orElse(null);
     }
 
     @Override
     public Course updateCourse(Long id, Course updatedCourse) {
-        Course existingCourse = getCourseById(id);
+
+        Course existingCourse = courseRepository.findById(id).orElse(null);
 
         if (existingCourse == null) {
             return null;
@@ -44,13 +43,17 @@ public class CourseServiceImpl implements CourseService {
         existingCourse.setName(updatedCourse.getName());
         existingCourse.setDuration(updatedCourse.getDuration());
 
-        return existingCourse;
+        return courseRepository.save(existingCourse);
     }
 
     @Override
     public boolean deleteCourse(Long id) {
-        return courses.removeIf(
-                course -> course.getId().equals(id)
-        );
+
+        if (!courseRepository.existsById(id)) {
+            return false;
+        }
+
+        courseRepository.deleteById(id);
+        return true;
     }
 }
